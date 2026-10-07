@@ -1,13 +1,14 @@
 <?php
-// Konfigurasi Database
-define('DB_HOST', 'localhost');
-define('DB_USER', 'root');
-define('DB_PASS', '');           // XAMPP default: kosong
-define('DB_NAME', 'undangan_db');
+// Konfigurasi Database - Railway Environment Variables
+define('DB_HOST', getenv('MYSQLHOST') ?: 'localhost');
+define('DB_USER', getenv('MYSQLUSER') ?: 'root');
+define('DB_PASS', getenv('MYSQLPASSWORD') ?: '');
+define('DB_NAME', getenv('MYSQLDATABASE') ?: 'undangan_db');
+define('DB_PORT', getenv('MYSQLPORT') ?: 3306);
 
 // Koneksi
 function getDB() {
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT);
     
     if ($conn->connect_error) {
         http_response_code(500);
