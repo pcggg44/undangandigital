@@ -654,6 +654,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hintText     = document.getElementById("photoboothHint");
 
     const startCameraBtn   = document.getElementById("startCamera");
+    const switchCameraBtn  = document.getElementById("switchCamera");
     const takePhotoBtn     = document.getElementById("takePhoto");
     const downloadPhotoBtn = document.getElementById("downloadPhoto");
     const retakePhotoBtn   = document.getElementById("retakePhoto");
@@ -661,42 +662,54 @@ document.addEventListener("DOMContentLoaded", () => {
     let cameraStream = null;
     let capturedDataURL = null;
 
-    async function startCamera() {
+   // ← baru: state kamera mana yang aktif
+    let currentFacingMode = "user";   // "user" = depan, "environment" = belakang
 
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("Browser kamu tidak mendukung akses kamera. Coba pakai Chrome / Safari terbaru.");
-            return;
-        }
 
-        try {
-            cameraStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: "user",
-                    width:  { ideal: 1080 },
-                    height: { ideal: 1920 }
-                },
-                audio: false
-            });
+    async function startCamera(facingMode = currentFacingMode) {
 
-            cameraVideo.srcObject = cameraStream;
-            await cameraVideo.play();
-
-            placeholder.classList.add("hidden");
-            hintText.textContent = "Kamera aktif — arahkan wajahmu ke frame";
-
-            // Setelah kamera nyala, tampilkan tombol ambil foto
-            startCameraBtn.classList.add("hidden");
-            takePhotoBtn.classList.remove("hidden");
-
-            // Frame baru muncul setelah foto diambil
-            frameOverlay.classList.remove("active");
-
-        } catch (error) {
-            console.error("Gagal akses kamera:", error);
-            alert("Tidak bisa mengakses kamera. Pastikan kamu mengizinkan akses kamera di browser.");
-        }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        alert("Browser kamu tidak mendukung akses kamera. Coba pakai Chrome / Safari terbaru.");
+        return;
     }
 
+    // Hentikan stream lama kalau ada
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: {
+                facingMode: { ideal: facingMode },
+                width:  { ideal: 1080 },
+                height: { ideal: 1920 }
+            },
+            audio: false
+        });
+
+        currentFacingMode = facingMode;
+
+        cameraVideo.srcObject = cameraStream;
+        await cameraVideo.play();
+
+        placeholder.classList.add("hidden");
+        hintText.textContent = facingMode === "user"
+            ? "Kamera depan aktif — arahkan wajahmu ke frame"
+            : "Kamera belakang aktif — arahkan ke objek";
+
+        startCameraBtn.classList.add("hidden");
+        takePhotoBtn.classList.remove("hidden");
+        switchCameraBtn.classList.remove("hidden");   // ← tampilkan tombol switch
+
+        frameOverlay.classList.remove("active");
+
+    } catch (error) {
+        console.error("Gagal akses kamera:", error);
+        alert("Tidak bisa mengakses kamera. Pastikan kamu mengizinkan akses kamera di browser.");
+    }
+}
 
     function takePhoto() {
 
@@ -734,14 +747,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Gambar ke canvas dengan mirror + crop
     ctx.save();
+
+// Hanya mirror kalau kamera depan
+if (currentFacingMode === "user") {
     ctx.translate(targetW, 0);
     ctx.scale(-1, 1);
-    ctx.drawImage(
-        cameraVideo,
-        cropX, cropY, cropW, cropH,        // sumber (crop)
-        0, 0, targetW, targetH             // tujuan (canvas)
-    );
-    ctx.restore();
+}
+
+ctx.drawImage(
+    cameraVideo,
+    cropX, cropY, cropW, cropH,
+    0, 0, targetW, targetH
+);
+ctx.restore();
 
     capturedDataURL = photoCanvas.toDataURL("image/png");
 
@@ -829,14 +847,24 @@ document.addEventListener("DOMContentLoaded", () => {
         downloadPhotoBtn.classList.add("hidden");
         retakePhotoBtn.classList.add("hidden");
 
-        // Nyalakan kamera lagi
-        await startCamera();
+        // Nyalakan kamera lagi dengan mode yang sama (depan/belakang)
+    await startCamera(currentFacingMode);
     }
+
+   async function switchCamera() {
+
+    // Ganti mode: user ↔ environment
+    const newMode = currentFacingMode === "user" ? "environment" : "user";
+
+    // Restart kamera dengan mode baru
+    await startCamera(newMode);
+}
 
 
     if (startCameraBtn) {
 
         startCameraBtn.addEventListener("click", startCamera);
+        switchCameraBtn.addEventListener("click", switchCamera);
         takePhotoBtn.addEventListener("click", takePhoto);
         downloadPhotoBtn.addEventListener("click", downloadPhoto);
         retakePhotoBtn.addEventListener("click", retakePhoto);
