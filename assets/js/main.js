@@ -700,53 +700,68 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function takePhoto() {
 
-        if (!cameraVideo.videoWidth) {
-            alert("Kamera belum siap. Tunggu sebentar.");
-            return;
-        }
-
-        // Ukuran canvas mengikuti video
-        const w = cameraVideo.videoWidth;
-        const h = cameraVideo.videoHeight;
-
-        photoCanvas.width  = w;
-        photoCanvas.height = h;
-
-        const ctx = photoCanvas.getContext("2d");
-
-        // Mirror biar sama seperti preview
-        ctx.save();
-        ctx.translate(w, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(cameraVideo, 0, 0, w, h);
-        ctx.restore();
-
-        // Simpan hasil
-        capturedDataURL = photoCanvas.toDataURL("image/png");
-
-        // Tampilkan hasil di canvas
-        photoCanvas.style.display = "block";
-
-        // Sembunyikan video
-        cameraVideo.style.display = "none";
-
-        // Tampilkan frame overlay
-        frameOverlay.classList.add("active");
-
-        // Matikan kamera biar hemat daya
-        if (cameraStream) {
-            cameraStream.getTracks().forEach(track => track.stop());
-            cameraStream = null;
-        }
-
-        hintText.textContent = "Foto berhasil diambil — unduh atau ambil ulang";
-
-        // Ubah tombol
-        takePhotoBtn.classList.add("hidden");
-        startCameraBtn.classList.add("hidden");
-        downloadPhotoBtn.classList.remove("hidden");
-        retakePhotoBtn.classList.remove("hidden");
+    if (!cameraVideo.videoWidth) {
+        alert("Kamera belum siap. Tunggu sebentar.");
+        return;
     }
+
+    // ===== Paksa canvas 3:4 (portrait) =====
+    const targetRatio = 3 / 4;            // lebar : tinggi
+    const targetW = 1080;                  // lebar standar
+    const targetH = Math.round(targetW / targetRatio); // 1920
+
+    photoCanvas.width  = targetW;
+    photoCanvas.height = targetH;
+
+    const ctx = photoCanvas.getContext("2d");
+
+    // Ambil ukuran asli video
+    const vw = cameraVideo.videoWidth;
+    const vh = cameraVideo.videoHeight;
+
+    // Hitung crop tengah biar rasio video sesuai 3:4
+    let cropW = vw;
+    let cropH = vw / targetRatio;
+
+    if (cropH > vh) {
+        cropH = vh;
+        cropW = vh * targetRatio;
+    }
+
+    // Posisi crop (tengah)
+    const cropX = (vw - cropW) / 2;
+    const cropY = (vh - cropH) / 2;
+
+    // Gambar ke canvas dengan mirror + crop
+    ctx.save();
+    ctx.translate(targetW, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(
+        cameraVideo,
+        cropX, cropY, cropW, cropH,        // sumber (crop)
+        0, 0, targetW, targetH             // tujuan (canvas)
+    );
+    ctx.restore();
+
+    capturedDataURL = photoCanvas.toDataURL("image/png");
+
+    photoCanvas.style.display = "block";
+    cameraVideo.style.display = "none";
+
+    frameOverlay.classList.add("active");
+
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+    }
+
+    hintText.textContent = "Foto berhasil diambil — unduh atau ambil ulang";
+
+    takePhotoBtn.classList.add("hidden");
+    startCameraBtn.classList.add("hidden");
+    downloadPhotoBtn.classList.remove("hidden");
+    retakePhotoBtn.classList.remove("hidden");
+}
 
 
     function downloadPhoto() {
