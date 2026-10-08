@@ -645,5 +645,190 @@ document.addEventListener("DOMContentLoaded", () => {
 
     });
 
+       /* ================= PHOTO BOOTH ================= */
+
+    const cameraVideo = document.getElementById("cameraVideo");
+    const photoCanvas = document.getElementById("photoCanvas");
+    const frameOverlay = document.getElementById("frameOverlay");
+    const placeholder  = document.getElementById("photoboothPlaceholder");
+    const hintText     = document.getElementById("photoboothHint");
+
+    const startCameraBtn   = document.getElementById("startCamera");
+    const takePhotoBtn     = document.getElementById("takePhoto");
+    const downloadPhotoBtn = document.getElementById("downloadPhoto");
+    const retakePhotoBtn   = document.getElementById("retakePhoto");
+
+    let cameraStream = null;
+    let capturedDataURL = null;
+
+    async function startCamera() {
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("Browser kamu tidak mendukung akses kamera. Coba pakai Chrome / Safari terbaru.");
+            return;
+        }
+
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: "user",
+                    width:  { ideal: 1080 },
+                    height: { ideal: 1920 }
+                },
+                audio: false
+            });
+
+            cameraVideo.srcObject = cameraStream;
+            await cameraVideo.play();
+
+            placeholder.classList.add("hidden");
+            hintText.textContent = "Kamera aktif — arahkan wajahmu ke frame";
+
+            // Setelah kamera nyala, tampilkan tombol ambil foto
+            startCameraBtn.classList.add("hidden");
+            takePhotoBtn.classList.remove("hidden");
+
+            // Frame baru muncul setelah foto diambil
+            frameOverlay.classList.remove("active");
+
+        } catch (error) {
+            console.error("Gagal akses kamera:", error);
+            alert("Tidak bisa mengakses kamera. Pastikan kamu mengizinkan akses kamera di browser.");
+        }
+    }
+
+
+    function takePhoto() {
+
+        if (!cameraVideo.videoWidth) {
+            alert("Kamera belum siap. Tunggu sebentar.");
+            return;
+        }
+
+        // Ukuran canvas mengikuti video
+        const w = cameraVideo.videoWidth;
+        const h = cameraVideo.videoHeight;
+
+        photoCanvas.width  = w;
+        photoCanvas.height = h;
+
+        const ctx = photoCanvas.getContext("2d");
+
+        // Mirror biar sama seperti preview
+        ctx.save();
+        ctx.translate(w, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(cameraVideo, 0, 0, w, h);
+        ctx.restore();
+
+        // Simpan hasil
+        capturedDataURL = photoCanvas.toDataURL("image/png");
+
+        // Tampilkan hasil di canvas
+        photoCanvas.style.display = "block";
+
+        // Sembunyikan video
+        cameraVideo.style.display = "none";
+
+        // Tampilkan frame overlay
+        frameOverlay.classList.add("active");
+
+        // Matikan kamera biar hemat daya
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+        }
+
+        hintText.textContent = "Foto berhasil diambil — unduh atau ambil ulang";
+
+        // Ubah tombol
+        takePhotoBtn.classList.add("hidden");
+        startCameraBtn.classList.add("hidden");
+        downloadPhotoBtn.classList.remove("hidden");
+        retakePhotoBtn.classList.remove("hidden");
+    }
+
+
+    function downloadPhoto() {
+
+        if (!capturedDataURL) {
+            alert("Belum ada foto yang diambil.");
+            return;
+        }
+
+        // Gabungkan foto + frame jadi satu gambar
+        const finalCanvas = document.createElement("canvas");
+        finalCanvas.width  = photoCanvas.width;
+        finalCanvas.height = photoCanvas.height;
+
+        const ctx = finalCanvas.getContext("2d");
+
+        // Gambar foto
+        const photoImg = new Image();
+        photoImg.onload = () => {
+
+            ctx.drawImage(photoImg, 0, 0, finalCanvas.width, finalCanvas.height);
+
+            // Gambar frame di atasnya
+            const frameImg = new Image();
+            frameImg.crossOrigin = "anonymous";
+            frameImg.onload = () => {
+
+                ctx.drawImage(frameImg, 0, 0, finalCanvas.width, finalCanvas.height);
+
+                // Trigger download
+                const link = document.createElement("a");
+                link.download = `wedding-photobooth-${Date.now()}.png`;
+                link.href = finalCanvas.toDataURL("image/png");
+                link.click();
+
+                hintText.textContent = "Foto berhasil diunduh 💐";
+            };
+
+            frameImg.onerror = () => {
+                // Kalau frame gagal load, download foto saja
+                const link = document.createElement("a");
+                link.download = `wedding-photobooth-${Date.now()}.png`;
+                link.href = capturedDataURL;
+                link.click();
+                hintText.textContent = "Frame tidak ditemukan, foto diunduh tanpa frame.";
+            };
+
+            frameImg.src = "assets/img/frame.png";
+        };
+
+        photoImg.src = capturedDataURL;
+    }
+
+
+    async function retakePhoto() {
+
+        // Reset tampilan
+        photoCanvas.style.display = "none";
+        cameraVideo.style.display = "block";
+        frameOverlay.classList.remove("active");
+
+        capturedDataURL = null;
+
+        takePhotoBtn.classList.add("hidden");
+        downloadPhotoBtn.classList.add("hidden");
+        retakePhotoBtn.classList.add("hidden");
+
+        // Nyalakan kamera lagi
+        await startCamera();
+    }
+
+
+    if (startCameraBtn) {
+
+        startCameraBtn.addEventListener("click", startCamera);
+        takePhotoBtn.addEventListener("click", takePhoto);
+        downloadPhotoBtn.addEventListener("click", downloadPhoto);
+        retakePhotoBtn.addEventListener("click", retakePhoto);
+
+    }
+
+    /* ================= END PHOTO BOOTH ================= */
+
 
 });
