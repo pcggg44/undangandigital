@@ -977,6 +977,25 @@ button {
     color: var(--navy);
 }
 
+/* Tombol Lihat Lokasi - tengah bawah */
+.event-location-button {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.event-location-button .gold-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 34px;
+    font-size: 11px;
+    letter-spacing: 3px;
+}
+
+.event-location-button .gold-button i {
+    font-size: 14px;
+}
+
 
 /* ================= GALLERY ================= */
 
