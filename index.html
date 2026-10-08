@@ -680,6 +680,81 @@
 
         </section>
 
+        <!-- ================= PHOTO BOOTH ================= -->
+<section id="photobooth" class="section photobooth-section">
+
+    <div class="section-heading reveal">
+
+        <p class="section-label">PHOTO BOOTH</p>
+
+        <h2>
+            Abadikan
+            <em>Momen Bahagia</em>
+        </h2>
+
+        <div class="line-ornament">
+            <span></span>
+            <i class="fa-solid fa-camera"></i>
+            <span></span>
+        </div>
+
+        <p>
+            Ambil foto bersama kami dengan frame spesial.
+            Bagikan momen bahagiamu untuk kami kenang.
+        </p>
+
+    </div>
+
+    <div class="photobooth-wrapper reveal">
+
+        <!-- Preview area -->
+        <div class="photobooth-stage">
+
+            <div class="photobooth-preview" id="photoboothPreview">
+                <video id="cameraVideo" autoplay playsinline muted></video>
+                <img id="frameOverlay" src="assets/img/frame.png" alt="Frame">
+                <canvas id="photoCanvas"></canvas>
+                <div class="photobooth-placeholder" id="photoboothPlaceholder">
+                    <i class="fa-solid fa-camera-retro"></i>
+                    <p>Kamera belum aktif</p>
+                </div>
+            </div>
+
+            <p class="photobooth-hint" id="photoboothHint">
+                Izinkan akses kamera untuk mulai foto
+            </p>
+
+        </div>
+
+        <!-- Tombol kontrol -->
+        <div class="photobooth-controls">
+
+            <button id="startCamera" class="gold-button">
+                <i class="fa-solid fa-camera"></i>
+                Buka Kamera
+            </button>
+
+            <button id="takePhoto" class="gold-button hidden">
+                <i class="fa-solid fa-circle-dot"></i>
+                Ambil Foto
+            </button>
+
+            <button id="downloadPhoto" class="gold-button hidden">
+                <i class="fa-solid fa-download"></i>
+                Unduh Foto
+            </button>
+
+            <button id="retakePhoto" class="gold-button hidden">
+                <i class="fa-solid fa-rotate-right"></i>
+                Ambil Ulang
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
 
         <!-- ================= CLOSING ================= -->
         <section class="closing">
