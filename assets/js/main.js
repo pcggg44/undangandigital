@@ -792,6 +792,7 @@ document.addEventListener("DOMContentLoaded", () => {
     takePhotoBtn.classList.add("hidden");
     startCameraBtn.classList.add("hidden");
     downloadPhotoBtn.classList.remove("hidden");
+    if (sharePhotoBtn) sharePhotoBtn.classList.remove("hidden");
     retakePhotoBtn.classList.remove("hidden");
 }
 
