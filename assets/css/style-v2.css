@@ -2103,3 +2103,264 @@ footer i {
 @media (max-width: 900px) {
     .photobooth-preview { max-width: 300px; }
 }
+
+/* =========================================================
+   RSVP GATE (Kunci Photobooth)
+========================================================= */
+
+.photo-gate {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.photo-gate-inner {
+    text-align: center;
+    padding: 50px 30px;
+    border: 1px dashed rgba(216, 180, 106, .4);
+    border-radius: 18px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+    backdrop-filter: blur(10px);
+}
+
+.photo-gate-inner > i {
+    font-size: 45px;
+    color: var(--gold);
+    margin-bottom: 20px;
+    display: block;
+    opacity: 0.7;
+}
+
+.photo-gate-inner h3 {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 32px;
+    font-weight: 500;
+    color: var(--white);
+    margin-bottom: 12px;
+}
+
+.photo-gate-inner p {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.8;
+    margin-bottom: 25px;
+    max-width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.photo-gate-inner .gold-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 28px;
+    font-size: 10px;
+    letter-spacing: 2.5px;
+}
+
+
+/* =========================================================
+   PHOTO COUNTER (Info jumlah foto)
+========================================================= */
+
+.photo-counter {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--gold);
+    letter-spacing: 1.5px;
+    font-style: italic;
+    opacity: 0.85;
+}
+
+.photo-counter.full {
+    color: #ef9a9a;
+    font-style: normal;
+}
+
+
+/* =========================================================
+   GALERI FOTO TAMU
+========================================================= */
+
+.guest-gallery-section {
+    background: linear-gradient(180deg, #041020, #020b17);
+    padding: 120px 6%;
+}
+
+.guest-gallery-grid {
+    max-width: 1050px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.guest-gallery-item {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 3 / 4;
+    background: linear-gradient(145deg, #183b61, #071426);
+    border: 1px solid rgba(216, 180, 106, .25);
+    cursor: pointer;
+    transition: all .4s ease;
+    animation: wishFadeIn .6s ease;
+}
+
+.guest-gallery-item:hover {
+    border-color: rgba(216, 180, 106, .55);
+    transform: translateY(-4px);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, .3);
+}
+
+.guest-gallery-item img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform .6s ease;
+}
+
+.guest-gallery-item:hover img {
+    transform: scale(1.08);
+}
+
+.guest-gallery-info {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 14px 12px;
+    background: linear-gradient(180deg, transparent, rgba(2, 11, 23, .9));
+    color: var(--white);
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.guest-gallery-info strong {
+    font-family: "Cormorant Garamond", serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--gold-light);
+    text-transform: capitalize;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.guest-gallery-info span {
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   LIGHTBOX (Preview foto besar)
+========================================================= */
+
+.guest-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 11, 23, .95);
+    backdrop-filter: blur(10px);
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all .3s ease;
+}
+
+.guest-lightbox.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.guest-lightbox img {
+    max-width: 90%;
+    max-height: 85vh;
+    border-radius: 14px;
+    border: 2px solid rgba(216, 180, 106, .4);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
+}
+
+.guest-lightbox-close {
+    position: absolute;
+    top: 25px;
+    right: 25px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(216, 180, 106, .15);
+    border: 1px solid rgba(216, 180, 106, .4);
+    color: var(--gold);
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .3s ease;
+}
+
+.guest-lightbox-close:hover {
+    background: var(--gold);
+    color: var(--navy);
+    transform: rotate(90deg);
+}
+
+
+/* =========================================================
+   RESPONSIVE — Galeri Foto Tamu
+========================================================= */
+
+@media (max-width: 800px) {
+    .guest-gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+}
+
+@media (max-width: 500px) {
+    .guest-gallery-section {
+        padding: 90px 5%;
+    }
+
+    .guest-gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .guest-gallery-info {
+        padding: 14px 10px 8px;
+    }
+
+    .guest-gallery-info strong {
+        font-size: 12px;
+    }
+
+    .guest-gallery-info span {
+        font-size: 8px;
+    }
+
+    .photo-gate-inner {
+        padding: 40px 20px;
+    }
+
+    .photo-gate-inner h3 {
+        font-size: 26px;
+    }
+
+    .photo-gate-inner > i {
+        font-size: 38px;
+    }
+}
