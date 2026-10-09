@@ -693,14 +693,15 @@ document.addEventListener("DOMContentLoaded", () => {
         cameraVideo.srcObject = cameraStream;
         await cameraVideo.play();
 
-        // ← INI YANG BARU: kasih class back-camera ke preview
-        const previewEl = document.querySelector(".photobooth-preview");
-        if (previewEl) {
-            if (facingMode === "environment") {
-                previewEl.classList.add("back-camera");
-            } else {
-                previewEl.classList.remove("back-camera");
-            }
+        // ===== ATUR MIRROR LANGSUNG DARI JS =====
+        // Kamera depan: mirror
+        // Kamera belakang: tidak mirror
+        if (facingMode === "user") {
+            cameraVideo.style.transform = "scaleX(-1)";
+            photoCanvas.style.transform = "scaleX(-1)";
+        } else {
+            cameraVideo.style.transform = "scaleX(1)";
+            photoCanvas.style.transform = "scaleX(1)";
         }
 
         placeholder.classList.add("hidden");
@@ -719,7 +720,6 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("Tidak bisa mengakses kamera. Pastikan kamu mengizinkan akses kamera di browser.");
     }
 }
-
     function takePhoto() {
 
     if (!cameraVideo.videoWidth) {
@@ -727,10 +727,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // ===== Paksa canvas 3:4 (portrait) =====
     const targetRatio = 3 / 4;
     const targetW = 1080;
-    const targetH = Math.round(targetW / targetRatio); // 1440
+    const targetH = Math.round(targetW / targetRatio);
 
     photoCanvas.width  = targetW;
     photoCanvas.height = targetH;
@@ -740,7 +739,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const vw = cameraVideo.videoWidth;
     const vh = cameraVideo.videoHeight;
 
-    // Crop tengah biar rasio 3:4
     let cropW = vw;
     let cropH = vw / targetRatio;
 
@@ -766,6 +764,14 @@ document.addEventListener("DOMContentLoaded", () => {
         0, 0, targetW, targetH
     );
     ctx.restore();
+
+    // ← PENTING: setelah capture, atur transform canvas
+    // biar preview hasil foto juga sesuai (mirror/tidak)
+    if (currentFacingMode === "user") {
+        photoCanvas.style.transform = "scaleX(-1)";
+    } else {
+        photoCanvas.style.transform = "scaleX(1)";
+    }
 
     capturedDataURL = photoCanvas.toDataURL("image/png");
 
