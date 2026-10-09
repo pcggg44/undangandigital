@@ -2024,7 +2024,14 @@ footer i {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transform: scaleX(-1); /* mirror biar kayak selfie */
+    transform: scaleX(-1);   /* default: mirror (kamera depan) */
+    background: #000;
+}
+
+/* Kalau kamera belakang: JANGAN mirror */
+.photobooth-preview.back-camera video,
+.photobooth-preview.back-camera canvas {
+    transform: scaleX(1);
 }
 
 .photobooth-preview canvas {
@@ -2059,19 +2066,13 @@ footer i {
     z-index: 3;
 }
 
-.photobooth-placeholder i {
-    font-size: 45px;
-}
-
+.photobooth-placeholder i { font-size: 45px; }
 .photobooth-placeholder p {
     font-size: 11px;
     letter-spacing: 2px;
     text-transform: uppercase;
 }
-
-.photobooth-placeholder.hidden {
-    display: none;
-}
+.photobooth-placeholder.hidden { display: none; }
 
 .photobooth-hint {
     margin-top: 15px;
@@ -2097,24 +2098,15 @@ footer i {
     gap: 8px;
 }
 
-.photobooth-controls .gold-button.hidden {
-    display: none;
-}
+.photobooth-controls .gold-button.hidden { display: none; }
 
 /* Mobile */
 @media (max-width: 500px) {
-    .photobooth-section {
-        padding: 90px 5%;
-    }
-
-    .photobooth-preview {
-        max-width: 280%;
-    }
+    .photobooth-section { padding: 90px 5%; }
+    .photobooth-preview { max-width: 280px; }
 }
 
 /* Tablet */
 @media (max-width: 900px) {
-    .photobooth-preview {
-        max-width: 300px;
-    }
+    .photobooth-preview { max-width: 300px; }
 }
