@@ -1150,7 +1150,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
-    /* =========================================================
+        /* =========================================================
        DETEKSI RSVP SUBMIT — Set localStorage
     ========================================================= */
 
@@ -1158,21 +1158,28 @@ document.addEventListener("DOMContentLoaded", () => {
     const originalRsvpForm = document.getElementById("rsvpForm");
 
     if (originalRsvpForm) {
-        originalRsvpForm.addEventListener("submit", () => {
+        originalRsvpForm.addEventListener("submit", (event) => {
 
-            // Delay sedikit biar tidak bentrok dengan handler yang sudah ada
+            // Ambil nama SAAT INI, sebelum form di-reset
+            const nameInput = document.getElementById("name");
+            const nameValue = nameInput ? nameInput.value.trim() : "";
+
+            if (!nameValue) return; // nama kosong, skip
+
+            // Set localStorage langsung
+            localStorage.setItem(RSVP_STORAGE_KEY, "true");
+            localStorage.setItem(RSVP_NAME_KEY, nameValue);
+
+            // Buka gate SETELAH response server sukses
+            // Pakai delay biar tidak ganggu proses submit
             setTimeout(() => {
-                const nameValue = document.getElementById("name").value.trim();
-                if (nameValue) {
-                    localStorage.setItem(RSVP_STORAGE_KEY, "true");
-                    localStorage.setItem(RSVP_NAME_KEY, nameValue);
-                    checkRsvpGate();
-                }
-            }, 500);
+                checkRsvpGate();
+                updatePhotoCounter();
+                loadGuestGallery();
+            }, 1500);
 
-        }, true); // pakai capture mode
+        }, true); // capture mode biar jalan duluan
     }
-
 
     /* =========================================================
        INITIAL LOAD
