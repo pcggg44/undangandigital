@@ -657,7 +657,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const switchCameraBtn  = document.getElementById("switchCamera");
     const takePhotoBtn     = document.getElementById("takePhoto");
     const downloadPhotoBtn = document.getElementById("downloadPhoto");
+    const sharePhotoBtn    = document.getElementById("sharePhoto");
     const retakePhotoBtn   = document.getElementById("retakePhoto");
+
+    // ← BARU: gate + counter + galeri
+    const photoGate        = document.getElementById("photoGate");
+    const photoContent     = document.getElementById("photoContent");
+    const photoCounter     = document.getElementById("photoCounter");
+    const guestGallery     = document.getElementById("guestGallery");
 
     let cameraStream = null;
     let capturedDataURL = null;
@@ -864,7 +871,7 @@ document.addEventListener("DOMContentLoaded", () => {
 }
 
 
-    if (startCameraBtn) {
+        if (startCameraBtn) {
 
         startCameraBtn.addEventListener("click", () => startCamera());
         switchCameraBtn.addEventListener("click", switchCamera);
@@ -872,9 +879,312 @@ document.addEventListener("DOMContentLoaded", () => {
         downloadPhotoBtn.addEventListener("click", downloadPhoto);
         retakePhotoBtn.addEventListener("click", retakePhoto);
 
+        if (sharePhotoBtn) {
+            sharePhotoBtn.addEventListener("click", sharePhoto);
+        }
+
     }
 
     /* ================= END PHOTO BOOTH ================= */
+
+
+    /* =========================================================
+       RSVP GATE — Kunci Photobooth Sebelum RSVP
+    ========================================================= */
+
+    const RSVP_STORAGE_KEY = "wedding_rsvp_done";
+    const RSVP_NAME_KEY    = "wedding_rsvp_name";
+
+    function checkRsvpGate() {
+
+        const isRsvpDone = localStorage.getItem(RSVP_STORAGE_KEY) === "true";
+
+        if (isRsvpDone) {
+            if (photoGate)    photoGate.classList.add("hidden");
+            if (photoContent) photoContent.classList.remove("hidden");
+            updatePhotoCounter();
+        } else {
+            if (photoGate)    photoGate.classList.remove("hidden");
+            if (photoContent) photoContent.classList.add("hidden");
+        }
+    }
+
+    // Panggil saat halaman load
+    checkRsvpGate();
+
+
+    /* =========================================================
+       PHOTO COUNTER — Info jumlah foto tamu
+    ========================================================= */
+
+    async function updatePhotoCounter() {
+
+        if (!photoCounter) return;
+
+        const guestName = localStorage.getItem(RSVP_NAME_KEY);
+        if (!guestName) {
+            photoCounter.textContent = "";
+            return;
+        }
+
+        try {
+            const res    = await fetch(API_URL + "get_photos.php");
+            const result = await res.json();
+
+            if (result.status !== "success") return;
+
+            const myPhotos = result.data.filter(
+                p => p.guest_name.toLowerCase() === guestName.toLowerCase()
+            );
+
+            const count = myPhotos.length;
+            const max   = 2;
+
+            if (count >= max) {
+                photoCounter.textContent = `Kamu sudah upload ${count} dari ${max} foto (batas maksimal).`;
+                photoCounter.classList.add("full");
+                if (sharePhotoBtn) sharePhotoBtn.classList.add("hidden");
+            } else {
+                photoCounter.textContent = `Kamu sudah upload ${count} dari ${max} foto.`;
+                photoCounter.classList.remove("full");
+            }
+
+        } catch (err) {
+            console.error("Gagal cek counter:", err);
+        }
+    }
+
+
+    /* =========================================================
+       SHARE PHOTO — Upload foto ke galeri
+    ========================================================= */
+
+    async function sharePhoto() {
+
+        if (!capturedDataURL) {
+            alert("Belum ada foto.");
+            return;
+        }
+
+        const guestName = localStorage.getItem(RSVP_NAME_KEY);
+
+        if (!guestName) {
+            alert("Nama tamu tidak ditemukan. Mohon isi RSVP dulu.");
+            return;
+        }
+
+        // Cek dulu apakah sudah capai batas
+        try {
+            const res = await fetch(API_URL + "get_photos.php");
+            const result = await res.json();
+
+            if (result.status === "success") {
+                const myPhotos = result.data.filter(
+                    p => p.guest_name.toLowerCase() === guestName.toLowerCase()
+                );
+
+                if (myPhotos.length >= 2) {
+                    alert("Kamu sudah upload 2 foto. Batas maksimal tercapai.");
+                    if (sharePhotoBtn) sharePhotoBtn.classList.add("hidden");
+                    return;
+                }
+            }
+        } catch (err) {
+            console.error("Gagal cek batas:", err);
+        }
+
+        // Kompres foto biar tidak terlalu besar (max ~300KB base64)
+        const compressed = await compressDataURL(capturedDataURL, 800, 0.7);
+
+        const btnOriginal = sharePhotoBtn.innerHTML;
+        sharePhotoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...';
+        sharePhotoBtn.disabled = true;
+
+        try {
+            const response = await fetch(API_URL + "upload_photo.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    guest_name: guestName,
+                    image_data: compressed
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                alert(`Terima kasih, ${guestName}! 💐\nFotomu sudah tampil di galeri.`);
+                loadGuestGallery();
+                updatePhotoCounter();
+            } else {
+                alert("Gagal upload: " + result.message);
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Gagal upload foto. Coba lagi.");
+        } finally {
+            sharePhotoBtn.innerHTML = btnOriginal;
+            sharePhotoBtn.disabled = false;
+        }
+    }
+
+
+    /* =========================================================
+       KOMPRES GAMBAR
+    ========================================================= */
+
+    function compressDataURL(dataURL, maxSize, quality) {
+
+        return new Promise((resolve) => {
+
+            const img = new Image();
+            img.onload = () => {
+
+                let { width, height } = img;
+
+                if (width > maxSize || height > maxSize) {
+                    if (width > height) {
+                        height = Math.round(height * (maxSize / width));
+                        width  = maxSize;
+                    } else {
+                        width  = Math.round(width * (maxSize / height));
+                        height = maxSize;
+                    }
+                }
+
+                const canvas = document.createElement("canvas");
+                canvas.width  = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                resolve(canvas.toDataURL("image/jpeg", quality));
+            };
+
+            img.src = dataURL;
+        });
+    }
+
+
+    /* =========================================================
+       LOAD GALERI FOTO TAMU
+    ========================================================= */
+
+    async function loadGuestGallery() {
+
+        if (!guestGallery) return;
+
+        try {
+            const res    = await fetch(API_URL + "get_photos.php");
+            const result = await res.json();
+
+            if (result.status !== "success" || !result.data) return;
+
+            const photos = result.data;
+
+            if (photos.length === 0) {
+                guestGallery.innerHTML =
+                    '<p class="empty-wishes"><i class="fa-regular fa-images"></i><br>Belum ada foto dari tamu. Jadilah yang pertama!</p>';
+                return;
+            }
+
+            guestGallery.innerHTML = photos.map(p => {
+
+                const initial = (p.guest_name || "?").trim().charAt(0).toUpperCase();
+                const timeStr = formatDate(p.created_at);
+
+                return `
+                    <div class="guest-gallery-item" data-img="${p.image_data}">
+                        <img src="${p.image_data}" alt="Foto dari ${escapeHtml(p.guest_name)}" loading="lazy">
+                        <div class="guest-gallery-info">
+                            <strong>${escapeHtml(p.guest_name)}</strong>
+                            <span>${timeStr}</span>
+                        </div>
+                    </div>
+                `;
+            }).join("");
+
+            // Attach click untuk lightbox
+            guestGallery.querySelectorAll(".guest-gallery-item").forEach(item => {
+                item.addEventListener("click", () => {
+                    openLightbox(item.getAttribute("data-img"));
+                });
+            });
+
+        } catch (err) {
+            console.error("Gagal load galeri:", err);
+        }
+    }
+
+
+    /* =========================================================
+       LIGHTBOX
+    ========================================================= */
+
+    let lightbox = document.querySelector(".guest-lightbox");
+
+    if (!lightbox) {
+        lightbox = document.createElement("div");
+        lightbox.className = "guest-lightbox";
+        lightbox.innerHTML = `
+            <button class="guest-lightbox-close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img src="" alt="Preview">
+        `;
+        document.body.appendChild(lightbox);
+
+        lightbox.addEventListener("click", (e) => {
+            if (e.target === lightbox || e.target.closest(".guest-lightbox-close")) {
+                lightbox.classList.remove("active");
+            }
+        });
+    }
+
+    function openLightbox(src) {
+        if (!src) return;
+        lightbox.querySelector("img").src = src;
+        lightbox.classList.add("active");
+    }
+
+
+    /* =========================================================
+       DETEKSI RSVP SUBMIT — Set localStorage
+    ========================================================= */
+
+    // Hook ke form RSVP yang sudah ada
+    const originalRsvpForm = document.getElementById("rsvpForm");
+
+    if (originalRsvpForm) {
+        originalRsvpForm.addEventListener("submit", () => {
+
+            // Delay sedikit biar tidak bentrok dengan handler yang sudah ada
+            setTimeout(() => {
+                const nameValue = document.getElementById("name").value.trim();
+                if (nameValue) {
+                    localStorage.setItem(RSVP_STORAGE_KEY, "true");
+                    localStorage.setItem(RSVP_NAME_KEY, nameValue);
+                    checkRsvpGate();
+                }
+            }, 500);
+
+        }, true); // pakai capture mode
+    }
+
+
+    /* =========================================================
+       INITIAL LOAD
+    ========================================================= */
+
+    loadGuestGallery();
+
+    // Auto refresh galeri setiap 30 detik
+    setInterval(loadGuestGallery, 30000);
+
+
+    /* ================= END RSVP GATE & GUEST GALLERY ================= */
 
 
 });
