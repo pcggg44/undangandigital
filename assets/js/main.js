@@ -693,9 +693,16 @@ document.addEventListener("DOMContentLoaded", () => {
         cameraVideo.srcObject = cameraStream;
         await cameraVideo.play();
 
-        // ===== TIDAK MIRROR SAMA SEKALI =====
-        cameraVideo.style.transform = "scaleX(1)";
-        photoCanvas.style.transform = "scaleX(1)";
+        // ===== KAMERA DEPAN: BALIK (karena HP kirim mirror) =====
+        // ===== KAMERA BELAKANG: BIASA (tidak mirror) =====
+        if (facingMode === "user") {
+            cameraVideo.style.transform = "scaleX(-1)";
+        } else {
+            cameraVideo.style.transform = "scaleX(1)";
+        }
+
+        // Canvas juga disamakan saat preview
+        photoCanvas.style.transform = cameraVideo.style.transform;
 
         placeholder.classList.add("hidden");
         hintText.textContent = facingMode === "user"
@@ -743,14 +750,22 @@ document.addEventListener("DOMContentLoaded", () => {
     const cropX = (vw - cropW) / 2;
     const cropY = (vh - cropH) / 2;
 
-    // ===== GAMBAR TANPA MIRROR =====
+    // ===== GAMBAR KE CANVAS =====
+    // Kalau kamera depan, balik lagi biar hasil tidak mirror
+    // (karena HP kirim video yang sudah mirror)
+    ctx.save();
+    if (currentFacingMode === "user") {
+        ctx.translate(targetW, 0);
+        ctx.scale(-1, 1);
+    }
     ctx.drawImage(
         cameraVideo,
         cropX, cropY, cropW, cropH,
         0, 0, targetW, targetH
     );
+    ctx.restore();
 
-    // ===== CANVAS TIDAK MIRROR =====
+    // Preview canvas: TIDAK mirror (karena sudah di-balik di atas)
     photoCanvas.style.transform = "scaleX(1)";
 
     capturedDataURL = photoCanvas.toDataURL("image/png");
