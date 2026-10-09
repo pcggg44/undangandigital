@@ -666,7 +666,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentFacingMode = "user";   // "user" = depan, "environment" = belakang
 
 
-    async function startCamera(facingMode = currentFacingMode) {
+   async function startCamera(facingMode = currentFacingMode) {
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("Browser kamu tidak mendukung akses kamera. Coba pakai Chrome / Safari terbaru.");
@@ -693,21 +693,14 @@ document.addEventListener("DOMContentLoaded", () => {
         cameraVideo.srcObject = cameraStream;
         await cameraVideo.play();
 
-        // ===== ATUR MIRROR LANGSUNG DARI JS =====
-        // Kamera depan: mirror
-        // Kamera belakang: tidak mirror
-        if (facingMode === "user") {
-            cameraVideo.style.transform = "scaleX(-1)";
-            photoCanvas.style.transform = "scaleX(-1)";
-        } else {
-            cameraVideo.style.transform = "scaleX(1)";
-            photoCanvas.style.transform = "scaleX(1)";
-        }
+        // ===== TIDAK MIRROR SAMA SEKALI =====
+        cameraVideo.style.transform = "scaleX(1)";
+        photoCanvas.style.transform = "scaleX(1)";
 
         placeholder.classList.add("hidden");
         hintText.textContent = facingMode === "user"
-            ? "Kamera depan aktif — arahkan wajahmu ke frame"
-            : "Kamera belakang aktif — arahkan ke objek";
+            ? "Kamera depan aktif"
+            : "Kamera belakang aktif";
 
         startCameraBtn.classList.add("hidden");
         takePhotoBtn.classList.remove("hidden");
@@ -739,7 +732,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const vw = cameraVideo.videoWidth;
     const vh = cameraVideo.videoHeight;
 
-    // Crop tengah biar rasio 3:4
     let cropW = vw;
     let cropH = vw / targetRatio;
 
@@ -752,21 +744,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const cropY = (vh - cropH) / 2;
 
     // ===== GAMBAR TANPA MIRROR =====
-    // (jangan pakai ctx.scale(-1, 1) di sini)
     ctx.drawImage(
         cameraVideo,
         cropX, cropY, cropW, cropH,
         0, 0, targetW, targetH
     );
 
-    // ===== ATUR MIRROR VIA CSS SAJA =====
-    // Kamera depan: canvas di-mirror (biar seperti selfie)
-    // Kamera belakang: canvas tidak mirror
-    if (currentFacingMode === "user") {
-        photoCanvas.style.transform = "scaleX(-1)";
-    } else {
-        photoCanvas.style.transform = "scaleX(1)";
-    }
+    // ===== CANVAS TIDAK MIRROR =====
+    photoCanvas.style.transform = "scaleX(1)";
 
     capturedDataURL = photoCanvas.toDataURL("image/png");
 
@@ -805,17 +790,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const photoImg = new Image();
     photoImg.onload = () => {
 
-        // Kalau kamera depan → mirror saat download
-        // Kalau kamera belakang → tidak mirror
-        ctx.save();
-        if (currentFacingMode === "user") {
-            ctx.translate(finalCanvas.width, 0);
-            ctx.scale(-1, 1);
-        }
+        // ===== GAMBAR TANPA MIRROR =====
         ctx.drawImage(photoImg, 0, 0, finalCanvas.width, finalCanvas.height);
-        ctx.restore();
 
-        // Gambar frame di atasnya
         const frameImg = new Image();
         frameImg.crossOrigin = "anonymous";
         frameImg.onload = () => {
@@ -874,7 +851,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (startCameraBtn) {
 
-        startCameraBtn.addEventListener("click", startCamera);
+        startCameraBtn.addEventListener("click", () => startCamera());
         switchCameraBtn.addEventListener("click", switchCamera);
         takePhotoBtn.addEventListener("click", takePhoto);
         downloadPhotoBtn.addEventListener("click", downloadPhoto);
