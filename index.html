@@ -705,7 +705,26 @@
 
     </div>
 
-    <div class="photobooth-wrapper reveal">
+
+    <!-- ===== GATE RSVP (muncul kalau belum isi RSVP) ===== -->
+    <div id="photoGate" class="photo-gate reveal">
+        <div class="photo-gate-inner">
+            <i class="fa-solid fa-lock"></i>
+            <h3>Isi RSVP Dulu, Ya!</h3>
+            <p>
+                Untuk mengakses Photobooth, mohon isi
+                konfirmasi kehadiran dan doa terlebih dahulu.
+            </p>
+            <a href="#rsvp" class="gold-button">
+                <i class="fa-regular fa-envelope"></i>
+                Isi RSVP Sekarang
+            </a>
+        </div>
+    </div>
+
+
+    <!-- ===== PHOTOBOOTH CONTENT (muncul kalau sudah isi RSVP) ===== -->
+    <div class="photobooth-wrapper reveal hidden" id="photoContent">
 
         <!-- Preview area -->
         <div class="photobooth-stage">
@@ -749,6 +768,11 @@
                 Unduh Foto
             </button>
 
+            <button id="sharePhoto" class="gold-button hidden">
+                <i class="fa-solid fa-share-nodes"></i>
+                Bagikan ke Galeri
+            </button>
+
             <button id="retakePhoto" class="gold-button hidden">
                 <i class="fa-solid fa-rotate-right"></i>
                 Ambil Ulang
@@ -756,6 +780,42 @@
 
         </div>
 
+        <p class="photo-counter" id="photoCounter"></p>
+
+    </div>
+
+</section>
+
+
+<!-- ================= GALERI FOTO TAMU ================= -->
+<section id="guest-gallery" class="section guest-gallery-section">
+
+    <div class="section-heading reveal">
+
+        <p class="section-label">GUEST MOMENTS</p>
+
+        <h2>
+            Galeri
+            <em>Foto Tamu</em>
+        </h2>
+
+        <div class="line-ornament">
+            <span></span>
+            <i class="fa-regular fa-images"></i>
+            <span></span>
+        </div>
+
+        <p>
+            Momen bahagia yang dibagikan oleh tamu undangan kami.
+        </p>
+
+    </div>
+
+    <div id="guestGallery" class="guest-gallery-grid">
+        <p class="empty-wishes">
+            <i class="fa-regular fa-images"></i><br>
+            Belum ada foto dari tamu. Jadilah yang pertama!
+        </p>
     </div>
 
 </section>
