@@ -739,6 +739,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const vw = cameraVideo.videoWidth;
     const vh = cameraVideo.videoHeight;
 
+    // Crop tengah biar rasio 3:4
     let cropW = vw;
     let cropH = vw / targetRatio;
 
@@ -750,23 +751,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const cropX = (vw - cropW) / 2;
     const cropY = (vh - cropH) / 2;
 
-    ctx.save();
-
-    // Mirror HANYA kalau kamera depan
-    if (currentFacingMode === "user") {
-        ctx.translate(targetW, 0);
-        ctx.scale(-1, 1);
-    }
-
+    // ===== GAMBAR TANPA MIRROR =====
+    // (jangan pakai ctx.scale(-1, 1) di sini)
     ctx.drawImage(
         cameraVideo,
         cropX, cropY, cropW, cropH,
         0, 0, targetW, targetH
     );
-    ctx.restore();
 
-    // ← PENTING: setelah capture, atur transform canvas
-    // biar preview hasil foto juga sesuai (mirror/tidak)
+    // ===== ATUR MIRROR VIA CSS SAJA =====
+    // Kamera depan: canvas di-mirror (biar seperti selfie)
+    // Kamera belakang: canvas tidak mirror
     if (currentFacingMode === "user") {
         photoCanvas.style.transform = "scaleX(-1)";
     } else {
@@ -796,54 +791,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function downloadPhoto() {
 
-        if (!capturedDataURL) {
-            alert("Belum ada foto yang diambil.");
-            return;
+    if (!capturedDataURL) {
+        alert("Belum ada foto yang diambil.");
+        return;
+    }
+
+    const finalCanvas = document.createElement("canvas");
+    finalCanvas.width  = photoCanvas.width;
+    finalCanvas.height = photoCanvas.height;
+
+    const ctx = finalCanvas.getContext("2d");
+
+    const photoImg = new Image();
+    photoImg.onload = () => {
+
+        // Kalau kamera depan → mirror saat download
+        // Kalau kamera belakang → tidak mirror
+        ctx.save();
+        if (currentFacingMode === "user") {
+            ctx.translate(finalCanvas.width, 0);
+            ctx.scale(-1, 1);
         }
+        ctx.drawImage(photoImg, 0, 0, finalCanvas.width, finalCanvas.height);
+        ctx.restore();
 
-        // Gabungkan foto + frame jadi satu gambar
-        const finalCanvas = document.createElement("canvas");
-        finalCanvas.width  = photoCanvas.width;
-        finalCanvas.height = photoCanvas.height;
+        // Gambar frame di atasnya
+        const frameImg = new Image();
+        frameImg.crossOrigin = "anonymous";
+        frameImg.onload = () => {
 
-        const ctx = finalCanvas.getContext("2d");
+            ctx.drawImage(frameImg, 0, 0, finalCanvas.width, finalCanvas.height);
 
-        // Gambar foto
-        const photoImg = new Image();
-        photoImg.onload = () => {
+            const link = document.createElement("a");
+            link.download = `wedding-photobooth-${Date.now()}.png`;
+            link.href = finalCanvas.toDataURL("image/png");
+            link.click();
 
-            ctx.drawImage(photoImg, 0, 0, finalCanvas.width, finalCanvas.height);
-
-            // Gambar frame di atasnya
-            const frameImg = new Image();
-            frameImg.crossOrigin = "anonymous";
-            frameImg.onload = () => {
-
-                ctx.drawImage(frameImg, 0, 0, finalCanvas.width, finalCanvas.height);
-
-                // Trigger download
-                const link = document.createElement("a");
-                link.download = `wedding-photobooth-${Date.now()}.png`;
-                link.href = finalCanvas.toDataURL("image/png");
-                link.click();
-
-                hintText.textContent = "Foto berhasil diunduh 💐";
-            };
-
-            frameImg.onerror = () => {
-                // Kalau frame gagal load, download foto saja
-                const link = document.createElement("a");
-                link.download = `wedding-photobooth-${Date.now()}.png`;
-                link.href = capturedDataURL;
-                link.click();
-                hintText.textContent = "Frame tidak ditemukan, foto diunduh tanpa frame.";
-            };
-
-            frameImg.src = "assets/img/frame.png";
+            hintText.textContent = "Foto berhasil diunduh 💐";
         };
 
-        photoImg.src = capturedDataURL;
-    }
+        frameImg.onerror = () => {
+            const link = document.createElement("a");
+            link.download = `wedding-photobooth-${Date.now()}.png`;
+            link.href = finalCanvas.toDataURL("image/png");
+            link.click();
+            hintText.textContent = "Frame tidak ditemukan, foto diunduh tanpa frame.";
+        };
+
+        frameImg.src = "assets/img/frame.png";
+    };
+
+    photoImg.src = capturedDataURL;
+}
 
 
     async function retakePhoto() {
