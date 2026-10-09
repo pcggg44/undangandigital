@@ -673,7 +673,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Hentikan stream lama kalau ada
     if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
         cameraStream = null;
@@ -694,6 +693,16 @@ document.addEventListener("DOMContentLoaded", () => {
         cameraVideo.srcObject = cameraStream;
         await cameraVideo.play();
 
+        // ← INI YANG BARU: kasih class back-camera ke preview
+        const previewEl = document.querySelector(".photobooth-preview");
+        if (previewEl) {
+            if (facingMode === "environment") {
+                previewEl.classList.add("back-camera");
+            } else {
+                previewEl.classList.remove("back-camera");
+            }
+        }
+
         placeholder.classList.add("hidden");
         hintText.textContent = facingMode === "user"
             ? "Kamera depan aktif — arahkan wajahmu ke frame"
@@ -701,7 +710,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         startCameraBtn.classList.add("hidden");
         takePhotoBtn.classList.remove("hidden");
-        switchCameraBtn.classList.remove("hidden");   // ← tampilkan tombol switch
+        switchCameraBtn.classList.remove("hidden");
 
         frameOverlay.classList.remove("active");
 
@@ -719,20 +728,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ===== Paksa canvas 3:4 (portrait) =====
-    const targetRatio = 3 / 4;            // lebar : tinggi
-    const targetW = 1080;                  // lebar standar
-    const targetH = Math.round(targetW / targetRatio); // 1920
+    const targetRatio = 3 / 4;
+    const targetW = 1080;
+    const targetH = Math.round(targetW / targetRatio); // 1440
 
     photoCanvas.width  = targetW;
     photoCanvas.height = targetH;
 
     const ctx = photoCanvas.getContext("2d");
 
-    // Ambil ukuran asli video
     const vw = cameraVideo.videoWidth;
     const vh = cameraVideo.videoHeight;
 
-    // Hitung crop tengah biar rasio video sesuai 3:4
+    // Crop tengah biar rasio 3:4
     let cropW = vw;
     let cropH = vw / targetRatio;
 
@@ -741,25 +749,23 @@ document.addEventListener("DOMContentLoaded", () => {
         cropW = vh * targetRatio;
     }
 
-    // Posisi crop (tengah)
     const cropX = (vw - cropW) / 2;
     const cropY = (vh - cropH) / 2;
 
-    // Gambar ke canvas dengan mirror + crop
     ctx.save();
 
-// Hanya mirror kalau kamera depan
-if (currentFacingMode === "user") {
-    ctx.translate(targetW, 0);
-    ctx.scale(-1, 1);
-}
+    // Mirror HANYA kalau kamera depan
+    if (currentFacingMode === "user") {
+        ctx.translate(targetW, 0);
+        ctx.scale(-1, 1);
+    }
 
-ctx.drawImage(
-    cameraVideo,
-    cropX, cropY, cropW, cropH,
-    0, 0, targetW, targetH
-);
-ctx.restore();
+    ctx.drawImage(
+        cameraVideo,
+        cropX, cropY, cropW, cropH,
+        0, 0, targetW, targetH
+    );
+    ctx.restore();
 
     capturedDataURL = photoCanvas.toDataURL("image/png");
 
