@@ -960,7 +960,7 @@ document.addEventListener("DOMContentLoaded", () => {
        SHARE PHOTO — Upload foto ke galeri
     ========================================================= */
 
-    async function sharePhoto() {
+        async function sharePhoto() {
 
         if (!capturedDataURL) {
             alert("Belum ada foto.");
@@ -994,14 +994,18 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error("Gagal cek batas:", err);
         }
 
-        // Kompres foto biar tidak terlalu besar (max ~300KB base64)
-        const compressed = await compressDataURL(capturedDataURL, 800, 0.7);
-
         const btnOriginal = sharePhotoBtn.innerHTML;
         sharePhotoBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengunggah...';
         sharePhotoBtn.disabled = true;
 
         try {
+            // ===== GABUNG FOTO + FRAME DULU =====
+            const withFrame = await combinePhotoWithFrame(capturedDataURL);
+
+            // ===== KOMPRES HASIL GABUNGAN =====
+            const compressed = await compressDataURL(withFrame, 800, 0.7);
+
+            // ===== UPLOAD =====
             const response = await fetch(API_URL + "upload_photo.php", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -1028,6 +1032,49 @@ document.addEventListener("DOMContentLoaded", () => {
             sharePhotoBtn.innerHTML = btnOriginal;
             sharePhotoBtn.disabled = false;
         }
+    }
+
+       /* =========================================================
+       GABUNG FOTO + FRAME
+    ========================================================= */
+
+    function combinePhotoWithFrame(photoDataURL) {
+
+        return new Promise((resolve) => {
+
+            const photoImg = new Image();
+
+            photoImg.onload = () => {
+
+                const canvas = document.createElement("canvas");
+                canvas.width  = photoImg.width;
+                canvas.height = photoImg.height;
+
+                const ctx = canvas.getContext("2d");
+
+                // Gambar foto asli
+                ctx.drawImage(photoImg, 0, 0, canvas.width, canvas.height);
+
+                // Gambar frame di atasnya
+                const frameImg = new Image();
+                frameImg.crossOrigin = "anonymous";
+
+                frameImg.onload = () => {
+                    ctx.drawImage(frameImg, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL("image/png"));
+                };
+
+                frameImg.onerror = () => {
+                    // Kalau frame gagal load, kirim foto saja
+                    console.warn("Frame gagal load, foto tanpa frame.");
+                    resolve(photoDataURL);
+                };
+
+                frameImg.src = "assets/img/frame.png";
+            };
+
+            photoImg.src = photoDataURL;
+        });
     }
 
 
